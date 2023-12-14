@@ -1,95 +1,27 @@
 #include <iostream>
-#include <queue>
-#include <stack>
+#include <cstdlib>
+
 using namespace std;
 
-const int MAX_MOTORS = 100;
-const int MAX_AVAILABLE_MOTORS = 100;
 const int MAX_QUEUED_CUSTOMERS = 100;
+const int MAX_SEWA_HISTORY = 100;
 
-// proses motor dengan stack
-struct motor {
-    string merk;
-    string platNomor;
-    double hargaSewa;
-    bool tersedia;
-};
 
-struct MotorStack {
-    stack<motor> motors;
-
-    void pushMotor(const motor& m) {
-        motors.push(m);
-    }
-
-    void displayMotors() {
-        if (motors.empty()) {
-            cout << "Stack motor kosong." << endl;
-            return;
-        }
-
-        cout << "Daftar Motor:" << endl;
-        stack<motor> temp = motors;
-        while (!temp.empty()) {
-            motor currentMotor = temp.top();
-            cout << "Merk: " << currentMotor.merk << ", Plat Nomor: " << currentMotor.platNomor
-                 << ", Harga Sewa: " << currentMotor.hargaSewa << ", Tersedia: " << (currentMotor.tersedia ? "Ya" : "Tidak") << endl;
-            temp.pop();
-        }
-    }
-    motor* searchMotorByPlatNomor(const string& platNomorToSearch) {
-        stack<motor> temp;
-        motor* foundMotor = NULL;
-
-        while (!motors.empty()) {
-            motor currentMotor = motors.top();
-            motors.pop();
-
-            if (currentMotor.platNomor == platNomorToSearch) {
-                foundMotor = &currentMotor; // Motor ditemukan, set pointer ke motor yang ditemukan
-                break;
-            }
-
-            temp.push(currentMotor);
-        }
-
-        // Kembalikan motor-motor yang tidak dicari ke dalam stack
-        while (!temp.empty()) {
-            motors.push(temp.top());
-            temp.pop();
-        }
-
-        return foundMotor;
-    }
-    
-};
-void inputMotor(MotorStack& motorStack) {
-    motor newMotor;
-    cout << "Merk: ";
-    cin >> newMotor.merk;
-    cout << "Plat Nomor: ";
-    cin >> newMotor.platNomor;
-    cout << "Harga Sewa: ";
-    cin >> newMotor.hargaSewa;
-    cout << "Tersedia (1 = Ya, 0 = Tidak): ";
-    cin >> newMotor.tersedia;
-
-    // Menambahkan motor ke dalam stack motor
-    motorStack.pushMotor(newMotor);
-}
-
-// struct date untuk menyimpan tanggal
 struct Date {
     int day;
     int month;
     int year;
 
     Date() {}
-    
     Date(int d, int m, int y) : day(d), month(m), year(y) {}
 };
+Date inputDate() {
+    Date date;
+    cout << "Masukkan tanggal (tanggal bulan tahun): ";
+    cin >> date.day >> date.month >> date.year;
+    return date;
+}
 
-// proses input data customer dengan queue
 struct customer {
     string nama;
     string alamat;
@@ -102,9 +34,9 @@ struct QueuedCustomerQueue {
     int front, rear, itemCount;
 
     QueuedCustomerQueue() {
-        front = 1;
+        front = 0;
         rear = -1;
-        itemCount = 1;
+        itemCount = 0;
     }
 
     bool isEmpty() {
@@ -128,6 +60,10 @@ struct QueuedCustomerQueue {
     }
 
     void inputCustomer() {
+    	char tambah;
+    	
+        do{
+        
         customer newCustomer;
         cout << "Masukkan Nama: ";
         cin >> newCustomer.nama;
@@ -138,169 +74,383 @@ struct QueuedCustomerQueue {
         cout << "Masukkan NIK: ";
         cin >> newCustomer.nik;
 
-        enqueue(newCustomer); // Memasukkan customer ke dalam antrian
+        enqueue(newCustomer);
+        cout << "Data customer berhasil ditambahkan." << endl;
+        cout<<"Ingin menambahkan customer lagi? (y/n): ";
+        cin>>tambah;
+		}while (tambah=='y'||tambah=='Y');
+    }
+};
+
+struct MotorNode {
+    string merk;
+    string platNomor;
+    double hargaSewa;
+    bool tersedia;
+    MotorNode* next;
+
+    MotorNode(const string& m, const string& plat, double harga, bool avail)
+        : merk(m), platNomor(plat), hargaSewa(harga), tersedia(avail), next(nullptr) {}
+};
+
+class MotorLinkedList {
+private:
+    MotorNode* head;
+    int indeksMotorStatisTerakhir;
+
+public:
+    MotorLinkedList() : head(nullptr), indeksMotorStatisTerakhir(-1) {}
+
+    bool isEmpty() const {
+        return head == nullptr;
+    }
+
+    void pushMotor(const string& merk, const string& platNomor, double hargaSewa, bool tersedia) {
+        MotorNode* newMotor = new MotorNode(merk, platNomor, hargaSewa, tersedia);
+
+        if (indeksMotorStatisTerakhir == -1) {
+            newMotor->next = head;
+            head = newMotor;
+        } else {
+            MotorNode* current = head;
+            for (int i = 0; i < indeksMotorStatisTerakhir; ++i) {
+                current = current->next;
+            }
+            newMotor->next = current->next;
+            current->next = newMotor;
+        }
+
+        indeksMotorStatisTerakhir++;
+    }
+
+    void displayMotors() {
+        if (head == nullptr || indeksMotorStatisTerakhir == -1) {
+            cout << "Tidak ada motor tersedia." << endl;
+            return;
+        }
+
+        MotorNode* current = head;
+        cout << "Daftar Motor :" << endl;
+        for (int i = 0; i <= indeksMotorStatisTerakhir; ++i) {
+            cout << "Merk: " << current->merk << ", Plat Nomor: " << current->platNomor
+                << ", Harga Sewa: " << current->hargaSewa << ", Tersedia: " << (current->tersedia ? "Ya" : "Tidak") << endl;
+            current = current->next;
+        }
+    }
+
+    MotorNode* searchMotorByPlatNomor(const string& platNomorToSearch) {
+        MotorNode* current = head;
+        while (current != nullptr) {
+            if (current->platNomor == platNomorToSearch) {
+                return current;
+            }
+            current = current->next;
+        }
+        return nullptr;
+    }
+
+    bool removeMotorByPlatNomor(const string& platNomorToRemove) {
+    MotorNode* current = head;
+    while (current != nullptr) {
+        if (current->platNomor == platNomorToRemove) {
+            current->tersedia = false;  // Ganti status tersedia menjadi false
+            return true;
+        }
+        current = current->next;
+    }
+    return false;
+}
+
+
+    ~MotorLinkedList() {
+        MotorNode* current = head;
+        while (current != nullptr) {
+            MotorNode* temp = current;
+            current = current->next;
+            delete temp;
+        }
     }
 };
 
 
-Date inputDate() {
-    int day, month, year;
-    bool isValidDate = false;
+struct SewaMotor {
+    string nonota;
+    MotorNode* motorSewa;
+    Date tgl_sewa;
+    Date tgl_kembali;
+    Date tgl_harusKembali;
+    int lamaSewa;
+    double biayaSewa;
+    double denda;
+    SewaMotor() : motorSewa(nullptr){
+	}
+};
+struct SewaMotorStack {
+	
+private:
+    SewaMotor sewaHistory[MAX_SEWA_HISTORY];
+    int top;
+    
 
-    do {
-        cout << "Masukkan tanggal (DD MM YYYY): ";
-        cin >> day >> month >> year;
 
-        // Validasi tanggal
-        if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900) {
-            isValidDate = true;
+public:
+    SewaMotorStack() : top(-1) {}
+
+    bool isEmpty() const {
+        return top == -1;
+    }
+
+    bool isFull() const {
+        return top == MAX_SEWA_HISTORY - 1;
+    }
+    
+
+    void push(const SewaMotor& sewaData) {
+        if (!isFull()) {
+            sewaHistory[++top] = sewaData;
+            
         } else {
-            cout << "Tanggal tidak valid. Harap masukkan tanggal dengan benar." << endl;
+            cout << "Stack penyewaan penuh, tidak dapat menambahkan data penyewaan." << endl;
         }
-    } while (!isValidDate);
+    }
+    
+    // Menampilkan data - data sewa
+   void displaySewaStack(const QueuedCustomerQueue& queuedCustomers) const {
+    for (int i = top; i >= 0; --i) {
+        cout << "Data Penyewaan:" << endl;
+        const SewaMotor& sewa = sewaHistory[i];
+        int customerIndex = (queuedCustomers.front + queuedCustomers.itemCount - 1 - i) % MAX_QUEUED_CUSTOMERS;
+        const customer& currentCustomer = queuedCustomers.customers[customerIndex];
+        cout << "Nama Penyewa: " << currentCustomer.nama << endl;
+        cout << "Motor sewa: " << sewa.motorSewa->merk << " - " << sewa.motorSewa->platNomor << endl;
+        cout << "Tanggal Sewa: " << sewa.tgl_sewa.day << "/" << sewa.tgl_sewa.month << "/" << sewa.tgl_sewa.year << endl;
+        cout << "Tanggal Kembali: " << sewa.tgl_kembali.day << "/" << sewa.tgl_kembali.month << "/" << sewa.tgl_kembali.year << endl;
 
-    return Date(day, month, year);
+    }
 }
 
-// proses sewa motor <belum linked list>
-struct sewa {
-    string nonota;
-    motor motorSewa;
-     Date tgl_sewa;          // Tanggal sewa
-    Date tgl_kembali;       // Tanggal kembali
-    Date tgl_harusKembali;  // Tanggal yang harus dikembalikan
-    double denda;
-    double total;
-
-    // Constructor untuk struktur sewa
-    
 };
 
-void sewaMotor(QueuedCustomerQueue& queuedCustomers, MotorStack& motorStack) {
-     if (queuedCustomers.isEmpty()) {
+
+void sewaMotor(QueuedCustomerQueue& queuedCustomers, MotorLinkedList& motorList, SewaMotorStack& sewaStack);
+void tampilInformasi(const customer& penyewa, const SewaMotor& sewa);
+double hitungDenda(const SewaMotor& sewa);
+double hitungTotal(const SewaMotor& sewa);
+
+
+void sewaMotor(QueuedCustomerQueue& queuedCustomers, MotorLinkedList& motorList, SewaMotorStack& sewaStack) {
+	
+    if (queuedCustomers.isEmpty()) {
         cout << "Antrian customer kosong." << endl;
         return;
     }
 
-    if (motorStack.motors.empty()) {
+    if (motorList.isEmpty()) {
         cout << "Tidak ada motor tersedia untuk disewa." << endl;
         return;
     }
 
-    cout << "Daftar Antrian Customer:" << endl;
-    for (int i = queuedCustomers.front; i <= queuedCustomers.rear; ++i) {
-        cout << i << ". " << queuedCustomers.customers[i].nama << endl;
-    }
+    customer currentCustomer = queuedCustomers.customers[queuedCustomers.front]; // Ambil customer dari depan antrian
+    
+    cout << queuedCustomers.front  + 1 <<" Nama Penyewa: " << currentCustomer.nama  << endl;
 
-    int customerIndex;
-    cout << "Pilih customer (masukkan nomor): ";
-    cin >> customerIndex;
-
-    if (customerIndex < queuedCustomers.front || customerIndex > queuedCustomers.rear) {
-        cout << "Nomor customer tidak valid." << endl;
-        return;
-    }
-
-    customer currentCustomer = queuedCustomers.customers[customerIndex];
-
-    motorStack.displayMotors();
+    motorList.displayMotors();
 
     string platNomorToSearch;
     cout << "Masukkan plat nomor motor yang ingin disewa: ";
     cin >> platNomorToSearch;
 
-    motor* foundMotor = motorStack.searchMotorByPlatNomor(platNomorToSearch);
+    MotorNode* foundMotor = motorList.searchMotorByPlatNomor(platNomorToSearch);
 
-    if (foundMotor ==  NULL) {
+      if (foundMotor == nullptr || !foundMotor->tersedia) {
         cout << "Motor dengan plat nomor tersebut tidak tersedia." << endl;
         return;
     }
 
-    if (!foundMotor->tersedia) {
-        cout << "Motor tidak tersedia untuk disewa saat ini." << endl;
+    cout << "Merk: " << foundMotor->merk << ", Plat Nomor: " << foundMotor->platNomor
+         << ", Harga Sewa: " << foundMotor->hargaSewa << ", Tersedia: " << (foundMotor->tersedia ? "Ya" : "Tidak") << endl;
+
+    SewaMotor newSewa;
+  
+	cout << "Masukkan tanggal sewa" << endl;
+    newSewa.tgl_sewa = inputDate();
+
+    
+    // Hitung tanggal kembali berdasarkan lama sewa
+    int lamaSewa;
+    cout << "Masukkan lama sewa (dalam hari): ";
+    cin >> lamaSewa;
+
+    newSewa.tgl_kembali.day = newSewa.tgl_sewa.day + lamaSewa;
+    newSewa.tgl_kembali.month = newSewa.tgl_sewa.month;
+    newSewa.tgl_kembali.year = newSewa.tgl_sewa.year;
+
+    // Handle jika tanggal kembali melebihi 30 hari dalam satu bulan atau beralih ke tahun berikutnya
+    if (newSewa.tgl_kembali.day > 30) {
+        newSewa.tgl_kembali.day -= 30;
+        newSewa.tgl_kembali.month++;
+
+        if (newSewa.tgl_kembali.month > 12) {
+            newSewa.tgl_kembali.month = 1;
+            newSewa.tgl_kembali.year++;
+        }
+    }
+    newSewa.motorSewa = foundMotor;
+
+    foundMotor->tersedia = false;
+    motorList.removeMotorByPlatNomor(platNomorToSearch);
+
+    queuedCustomers.front = (queuedCustomers.front + 1) % MAX_QUEUED_CUSTOMERS;
+    queuedCustomers.itemCount--;
+
+    
+     newSewa.lamaSewa = lamaSewa;
+    newSewa.biayaSewa = foundMotor->hargaSewa;  // biaya sewa per hari, dapat disesuaikan
+
+      
+tampilInformasi(currentCustomer, newSewa);
+sewaStack.push(newSewa);
+
+
+
+}	
+
+
+																		    	
+void tampilInformasi(const customer& penyewa, const SewaMotor& sewa) {			
+    cout << "\n\t\t||-----------------------Nota Sewa------------------------------||";
+    cout << "\n\t\t||==============================================================||";
+    cout << "\n\t\t||Nama Penyewa				: " << penyewa.nama << "			||";
+    cout << "\n\t\t||Lama Sewa				: " << sewa.lamaSewa    << " Hari		||";
+    cout << "\n\t\t||Tanggal Sewa				: " << sewa.tgl_sewa.day << "/" << sewa.tgl_sewa.month << "/" << sewa.tgl_sewa.year << "		||";
+    cout << "\n\t\t||Tanggal Kembali			: " << sewa.tgl_kembali.day << "/" << sewa.tgl_kembali.month << "/" << sewa.tgl_kembali.year << "		||";
+    cout << "\n\t\t||Motor Sewa				: " << sewa.motorSewa->merk << " - " << sewa.motorSewa->platNomor 								 << "	||";
+    cout << "\n\t\t||Harga Sewa Per Hari			: " << sewa.motorSewa->hargaSewa 													     << "        	||";
+    cout << "\n\t\t||Total Biaya				: " << hitungTotal(sewa) << "        	||";
+    cout << "\n\t\t||==============================================================||";
+}
+
+
+void tambahDataMotor(MotorLinkedList& motorList) {
+    motorList.pushMotor("Suzuki", "B9876", 150000, true);
+    motorList.pushMotor("Kawasaki", "B5432", 130000, true);
+    motorList.pushMotor("Honda", "B1234", 120000, true);
+    motorList.pushMotor("Yamaha", "B3456", 140000, true);
+    
+}
+
+double hitungTotal(const SewaMotor& sewa) {
+    // Menghitung total biaya berdasarkan lama sewa dan biaya sewa per hari
+    double totalBiaya = sewa.lamaSewa * sewa.biayaSewa;
+
+    return totalBiaya;
+}
+
+double hitungDenda(const SewaMotor& sewa) {
+    // Hitung selisih dalam hari antara tanggal pengembalian aktual dan tanggal jatuh tempo
+    int selisihHari = (sewa.tgl_kembali.year - sewa.tgl_harusKembali.year) * 365 +
+                      (sewa.tgl_kembali.month - sewa.tgl_harusKembali.month) * 30 +
+                      (sewa.tgl_kembali.day - sewa.tgl_harusKembali.day);
+
+    // Biaya keterlambatan per hari
+    const double dendaPerHari = 80000.0;
+
+    // Hitung total biaya keterlambatan
+    double totalDenda = max(selisihHari, 0) * dendaPerHari;
+
+    return totalDenda;
+}
+
+
+void kembalikanMotor(QueuedCustomerQueue& queuedCustomers, MotorLinkedList& motorList, SewaMotorStack& sewaStack) {
+    cout << "Masukkan plat nomor motor yang akan dikembalikan: ";
+    string platNomorMotor;
+    cin >> platNomorMotor;
+
+    MotorNode* returnedMotor = motorList.searchMotorByPlatNomor(platNomorMotor);
+
+    if (returnedMotor == nullptr) {
+        cout << "Motor dengan plat nomor tersebut tidak ditemukan." << endl;
         return;
     }
 
-  cout << "Merk: " << foundMotor->merk << ", Plat Nomor: " << foundMotor->platNomor
-     << ", Harga Sewa: " << foundMotor->hargaSewa << ", Tersedia: " << (foundMotor->tersedia ? "Ya" : "Tidak") << endl;
+    cout << "Merk: " << returnedMotor->merk << ", Plat Nomor: " << returnedMotor->platNomor
+         << ", Harga Sewa: " << returnedMotor->hargaSewa << ", Tersedia: " << (returnedMotor->tersedia ? "Ya" : "Tidak") << endl;
 
-    // Memasukkan data sewa dari input pengguna
-    sewa newSewa;
-    cout << "Masukkan nomor nota: ";
-    cin >> newSewa.nonota;
+   Date tanggalKembali;
+    cout << "Masukkan tanggal kembali seharusnya \n ";
+    tanggalKembali = inputDate();
+	
+	//
+    SewaMotor* sewaMotor = new SewaMotor(); // Untuk menyimpan data penyewaan yang sedang diproses
+    sewaMotor->motorSewa = returnedMotor;
+    sewaMotor->tgl_harusKembali = sewaMotor->tgl_kembali = tanggalKembali;
+
+   cout << "Masukkan tanggal kembali keterlambatan" << endl;
+    sewaMotor->tgl_kembali = inputDate();
+
+
+    // Hitung biaya keterlambatan
+    sewaMotor->denda = hitungDenda(*sewaMotor);
+
+    // Tampilkan informasi termasuk biaya keterlambatan
+    cout << "Denda: " << sewaMotor->denda << endl;
+    returnedMotor->tersedia = true;
+
     
-     cout << "Masukkan tanggal awal sewa" << endl;
-    newSewa.tgl_sewa = inputDate();
-
-    cout << "Masukkan tanggal harus kembali sewa" << endl;
-    newSewa.tgl_harusKembali = inputDate();
-
-   // cout << "Masukkan tanggal kembali sewa" << endl;
-    //newSewa.tgl_kembali = inputDate();
-
-    newSewa.denda = 0; // Awalnya denda 0, akan dihitung jika keterlambatan pengembalian motor
-    newSewa.total = 0; // Awalnya total biaya 0, akan dihitung saat pembayaran
-
-    // Mengubah status motor menjadi tidak tersedia
-     foundMotor->tersedia = false;
-
-    // Mengeluarkan motor dari stack karena sudah disewa
-    motorStack.motors.pop();
-
-     // Menampilkan informasi sewa
-    cout << "Motor berhasil disewa oleh " << currentCustomer.nama << " pada tanggal "
-         << newSewa.tgl_sewa.day << "/" << newSewa.tgl_sewa.month << "/" << newSewa.tgl_sewa.year
-         << " hingga tanggal "
-         << newSewa.tgl_harusKembali.day << "/" << newSewa.tgl_harusKembali.month << "/" << newSewa.tgl_harusKembali.year
-         << "." << endl;
-
-   
 }
 
 
 
-int tampilkanMenu(QueuedCustomerQueue& queuedCustomers, MotorStack& motorStack) {
+int tampilkanMenu(QueuedCustomerQueue& queuedCustomers, MotorLinkedList& motorList, SewaMotorStack& sewaStack) {
     int pilihan;
     cout << "\n=== MENU ===" << endl;
     cout << "1. Input Data Customer" << endl;
-    cout << "2. Input Data Motor" << endl;
-    cout << "3. Tampilkan List Motor" << endl;
-    cout << "4. Sewa Motor" << endl;
-    cout << "5. Pembayaran" << endl;
+    cout << "2. Tampilkan List Motor" << endl;
+    cout << "3. Sewa Motor" << endl;
+    cout << "4. kembalikan motor" << endl;
+    cout << "5. Data sewa" <<endl;
     cout << "6. Keluar" << endl;
     cout << "Pilih menu (1-6): ";
     cin >> pilihan;
-    system("cls");
-
+	system("cls");
     switch (pilihan) {
         case 1:
-            queuedCustomers.inputCustomer(); // Panggil fungsi inputCustomer untuk memasukkan data customer
+            queuedCustomers.inputCustomer();
             break;
-        case 2: {
-            inputMotor(motorStack); // Panggil fungsi inputMotor untuk memasukkan data motor
+        case 2:
+            motorList.displayMotors();
             break;
-
-        }
-        break;
         case 3:
-            motorStack.displayMotors();
+            sewaMotor(queuedCustomers, motorList, sewaStack );
             break;
-        case 4:
-            sewaMotor(queuedCustomers, motorStack);
+        case 4 :
+        	sewaStack.displaySewaStack(queuedCustomers);
+        	kembalikanMotor(queuedCustomers, motorList, sewaStack);
+        	break;
+        case 5 :
+        	sewaStack.displaySewaStack(queuedCustomers);
             break;
+        // Kasus 5-6 dan logika lainnya...
     }
-
+	
     return pilihan;
 }
 
 int main() {
     QueuedCustomerQueue queuedCustomers;
-    MotorStack motorStack;
-    int pilihan;
+    MotorLinkedList motorList;
+    SewaMotorStack sewaStack;
+    int pilihan;								
+	cout << "\n\t\t||==============================================================================||"; 											
+	cout << "\n\t\t||			Selamat Datang Di Rental Tujuh				||";
+    cout << "\n\t\t||==============================================================================||"; 
+    cout<< endl;
+	   do {
+        pilihan = tampilkanMenu(queuedCustomers, motorList, sewaStack);
+    } while (pilihan != 6);
+        cout << "Program selesai. Terima kasih!" << endl;
 
-    do {
-        pilihan = tampilkanMenu(queuedCustomers, motorStack);
-    } while (pilihan != 6); // Perubahan pilihan keluar (exit) saat input 6 dipilih
 
     return 0;
 }
