@@ -213,6 +213,23 @@ public:
             cout << "Stack penyewaan penuh, tidak dapat menambahkan data penyewaan." << endl;
         }
     }
+     void sortSewaByDate() {
+        for (int i = 0; i <= top; ++i) {
+            for (int j = 0; j <= top - i - 1; ++j) {
+                if (sewaHistory[j].tgl_sewa.year > sewaHistory[j + 1].tgl_sewa.year ||
+                    (sewaHistory[j].tgl_sewa.year == sewaHistory[j + 1].tgl_sewa.year &&
+                     sewaHistory[j].tgl_sewa.month > sewaHistory[j + 1].tgl_sewa.month) ||
+                    (sewaHistory[j].tgl_sewa.year == sewaHistory[j + 1].tgl_sewa.year &&
+                     sewaHistory[j].tgl_sewa.month == sewaHistory[j + 1].tgl_sewa.month &&
+                     sewaHistory[j].tgl_sewa.day > sewaHistory[j + 1].tgl_sewa.day)) {
+                    SewaMotor temp = sewaHistory[j];
+                    sewaHistory[j] = sewaHistory[j + 1];
+                    sewaHistory[j + 1] = temp;
+                }
+            }
+        }
+    }
+
     
     // Menampilkan data - data sewa
    void displaySewaStack(const QueuedCustomerQueue& queuedCustomers) const {
@@ -227,9 +244,16 @@ public:
         cout << "Tanggal Kembali: " << sewa.tgl_kembali.day << "/" << sewa.tgl_kembali.month << "/" << sewa.tgl_kembali.year << endl;
 
     }
-}
+} void displaySortedSewa() const {
+        SewaMotorStack tempStack = *this; // Buat salinan stack untuk sorting tanpa merusak data asli
+        tempStack.sortSewaByDate(); // Urutkan data penyewaan
 
-};
+        for (int i = tempStack.top; i >= 0; --i) {
+            // Tampilkan data yang telah diurutkan
+            // ... (tampilkan sesuai kebutuhan, mungkin seperti yang telah kamu lakukan sebelumnya)
+        }
+    }
+};;
 
 
 void sewaMotor(QueuedCustomerQueue& queuedCustomers, MotorLinkedList& motorList, SewaMotorStack& sewaStack);
@@ -399,6 +423,25 @@ void kembalikanMotor(QueuedCustomerQueue& queuedCustomers, MotorLinkedList& moto
 
     // Simpan data penyewaan ke dalam stack
 }
+void bubbleSortSewa(SewaMotor sewaHistory[], int n) {
+    for (int i = 0; i < n - 1; ++i) {
+        for (int j = 0; j < n - i - 1; ++j) {
+            // Bandingkan tanggal sewa untuk swap jika diperlukan
+            if (sewaHistory[j].tgl_sewa.year > sewaHistory[j + 1].tgl_sewa.year ||
+                (sewaHistory[j].tgl_sewa.year == sewaHistory[j + 1].tgl_sewa.year &&
+                 sewaHistory[j].tgl_sewa.month > sewaHistory[j + 1].tgl_sewa.month) ||
+                (sewaHistory[j].tgl_sewa.year == sewaHistory[j + 1].tgl_sewa.year &&
+                 sewaHistory[j].tgl_sewa.month == sewaHistory[j + 1].tgl_sewa.month &&
+                 sewaHistory[j].tgl_sewa.day > sewaHistory[j + 1].tgl_sewa.day)) {
+                // Lakukan swap jika data perlu ditukar
+                SewaMotor temp = sewaHistory[j];
+                sewaHistory[j] = sewaHistory[j + 1];
+                sewaHistory[j + 1] = temp;
+            }
+        }
+    }
+}
+
 
 
 
